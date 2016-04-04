@@ -24,8 +24,8 @@ x.range <- as.integer(range(parka[,1]))
 x.range
 y.range <- as.integer(range(parka[,2]))
 y.range
-grd <- expand.grid(x=seq(from=x.range[1], to=x.range[2], by=10),
-  y=seq(from=y.range[1], to=y.range[2], by=10))
+grd <- expand.grid(x=seq(from=x.range[1], to=x.range[2], by=100),
+  y=seq(from=y.range[1], to=y.range[2], by=100))
 grd
 park_gls = gls(Chloride ~ 1, data = parka)
 plot(Variogram(park_gls, form= ~ Utm_E + Utm_N))
