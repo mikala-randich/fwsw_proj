@@ -51,6 +51,7 @@ zmatrix2 <- matrix(q$krige.var, 1274, 966)
 persp(x,y,zmatrix2, xlab="x coordinate",
   ylab="ycoordinate", zlab="Predicted values of z",
   main="Perspective plot of the standard errors")
+#pushingchange
 ```
 
 You can also embed plots, for example:
