@@ -1,0 +1,43 @@
+---
+title: "fwsw_geostat"
+author: "Mikala"
+date: "March 23, 2016"
+output: word_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+park <- ParkQuant
+head(park)
+colsofinterest = c('Utm_E', 'Utm_N', 'Chloride')
+colsofinterest 
+parka <- subset(park, select = colsofinterest)
+head(parka)
+library(geoR)
+library(gstat)
+library(sp)
+library(gls)
+x.range <- as.integer(range(parka[,1]))
+x.range
+y.range <- as.integer(range(parka[,2]))
+y.range
+grd <- expand.grid(x=seq(from=x.range[1], to=x.range[2], by=10),
+  y=seq(from=y.range[1], to=y.range[2], by=10))
+grd
+park_gls = gls(Chloride ~ 1, data = parka)
+plot(Variogram(park_gls, form= ~ Utm_E + Utm_N))
+maxDist = max(dist(parka[ , c('Utm_E', 'Utm_N')]))
+park_sp_gls = update(park_gls, correlation = corExp(form=~Utm_E + Utm_N, nugget=T))
+plot(Variogram(park_sp_gls, form= ~ Utm_E + Utm_N))
+m <- Variogram(park_gls, form= ~ Chloride + Utm_N + Utm_E)
+q1 <- krige(id="Chloride", formula=Chloride~1, data=parka, newdata=grd, model = m, locations=~'Utm_E'+'Utm_N')
+q2 <- krige(id="Chloride", formula=Chloride~100, parka, newdata=grd, model = m)
+coordinates(parka) <- ~x+y
+
+fit.wave(v.object, c0, cw, aw, type=􏰄c􏰄,
+iterations=10, tolerance=1e-06, echo=FALSE, plot.it=FALSE, weighted=TRUE)
+```
+

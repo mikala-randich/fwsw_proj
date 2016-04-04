@@ -1,0 +1,51 @@
+---
+title: "fwsw_spatial"
+author: "Mikala"
+date: "March 26, 2016"
+output: word_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+park = ParkQuant
+colsofinterest = c('Utm_E', 'Utm_N', 'Chloride')
+colsofinterest 
+parka <- subset(park, select = colsofinterest)
+head(parka)
+library(geoR)
+library(gstat)
+library(sp)
+library(vegan)
+library(nlme)
+park_xy = data.frame(x = parka$Utm_E, y = parka$Utm_N)
+park_xy
+xy_dist = dist(park_xy)
+xy_dist
+max_dist = max(xy_dist) / 2
+plot(park_xy)
+cl = parka$Chloride
+cl_dist = dist(cl)
+cl_dist
+mant_cl = mantel(xy_dist, cl_dist)
+mant_cl
+plot(xy_dist, cl_dist)
+park_gls = gls(Chloride ~ Utm_N + Utm_E, data = parka)
+summary(park_gls)
+par(mfrow=c(1,1))
+plot(Variogram(park_gls, form= ~ Chloride + Utm_N + Utm_E))
+x = park_xy$x 
+y = park_xy$y
+abn_xy = data.frame(cl, park_xy)
+abn_xy
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
