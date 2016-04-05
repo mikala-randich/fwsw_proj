@@ -10,21 +10,25 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r}
-
-park <- ParkQuant
+# First, the data file is imported, and the relevant columns of data are subsetted from the data file.
+park = ParkQuant
 colsofinterest = c('Utm_E', 'Utm_N', 'Chloride')
-colsofinterest 
 parka <- subset(park, select = colsofinterest)
-head(parka)
+
+# The necessary packages are loaded from R
 library(geoR)
 library(gstat)
+
+# The subsetted data is converted to geodata
 parkb <- as.geodata(parka)
+
+# A predictive model is created to predict a specific chloride value based on a given new location
 prediction <- ksline(parkb, cov.model="exp", cov.pars=c(10, 3.33),                        nugget=0, locations=c(332640,795600))
 prediction$predict
+
+# The spatial ranges for X and Y coordinate locations are determined
 x.range <- as.integer(range(park[,1]))
-x.range
 y.range <- as.integer(range(park[,2]))
-y.range
 x=seq(from=x.range[1], to=x.range[2], by=100)
 head(x)
 y=seq(from=y.range[1], to=y.range[2], by=100)
@@ -46,7 +50,6 @@ persp(x,y,zmatrix, xlab="x coordinate",
   ylab="y coordinate", zlab="Predicted values of z",
   main="Perspective plot of the predicted values")
 head(matrix(q$predict, 1274, 966))
-?persp
 zmatrix2 <- matrix(q$krige.var, 1274, 966)
 persp(x,y,zmatrix2, xlab="x coordinate",
   ylab="ycoordinate", zlab="Predicted values of z",

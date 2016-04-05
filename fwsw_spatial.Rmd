@@ -10,32 +10,40 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r}
+# First, the data file is imported, and the relevant columns of data are subsetted from the data file.
 park = ParkQuant
 colsofinterest = c('Utm_E', 'Utm_N', 'Chloride')
-colsofinterest 
 parka <- subset(park, select = colsofinterest)
-head(parka)
-library(geoR)
-library(gstat)
+
+# The necessary packages are loaded from R
 library(sp)
 library(vegan)
 library(nlme)
+
+# A new data frame is constructed to contain only the location information for each well site. The distance function is run on this location information, the maximum distance that should be used is also calculated, and these locations are plotted on a graph.
 park_xy = data.frame(x = parka$Utm_E, y = parka$Utm_N)
-park_xy
 xy_dist = dist(park_xy)
-xy_dist
 max_dist = max(xy_dist) / 2
 plot(park_xy)
+
+# The chloride ion data is subsetted from the data file, and the distance function is again run on just the chloride concentrations. 
 cl = parka$Chloride
 cl_dist = dist(cl)
-cl_dist
+
+# A mantel test is run on the chloride and location distance functions to make an early examination of spatial dependnece, and locations are plotted against chloride concentrations.
 mant_cl = mantel(xy_dist, cl_dist)
 mant_cl
 plot(xy_dist, cl_dist)
+
+# A GLS model is created for the data, predicting chloride concentrations based on eastern and northern UTM location coordinates. 
 park_gls = gls(Chloride ~ Utm_N + Utm_E, data = parka)
 summary(park_gls)
+
+# A variogram is created to examine spatial dependence between chloride concentrations and location
 par(mfrow=c(1,1))
 plot(Variogram(park_gls, form= ~ Chloride + Utm_N + Utm_E))
+
+
 x = park_xy$x 
 y = park_xy$y
 abn_xy = data.frame(cl, park_xy)
