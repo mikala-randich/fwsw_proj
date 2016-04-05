@@ -10,34 +10,46 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r}
-park <- ParkQuant
-head(park)
+# First, the data file is imported, and the relevant columns of data are subsetted from the data file.
+park = ParkQuant
 colsofinterest = c('Utm_E', 'Utm_N', 'Chloride')
-colsofinterest 
 parka <- subset(park, select = colsofinterest)
-head(parka)
-library(geoR)
+
+# Load the necessary packages from R
 library(gstat)
-library(sp)
-library(gls)
+library(sgeostat)
+library(scatterplot3d)
+library(rgl)
+
+# Create the grid for predictions of chloride based on spatial location
 x.range <- as.integer(range(parka[,1]))
-x.range
 y.range <- as.integer(range(parka[,2]))
-y.range
 grd <- expand.grid(x=seq(from=x.range[1], to=x.range[2], by=100),
   y=seq(from=y.range[1], to=y.range[2], by=100))
-grd
+
+# Define models
+
 park_gls = gls(Chloride ~ 1, data = parka)
 plot(Variogram(park_gls, form= ~ Utm_E + Utm_N))
 maxDist = max(dist(parka[ , c('Utm_E', 'Utm_N')]))
+m <- Variogram(park_gls, form= ~ Chloride + Utm_N + Utm_E)
+
 park_sp_gls = update(park_gls, correlation = corExp(form=~Utm_E + Utm_N, nugget=T))
 plot(Variogram(park_sp_gls, form= ~ Utm_E + Utm_N))
-m <- Variogram(park_gls, form= ~ Chloride + Utm_N + Utm_E)
-q1 <- krige(id="Chloride", formula=Chloride~1, data=parka, newdata=grd, model = m, locations=~'Utm_E'+'Utm_N')
-q2 <- krige(id="Chloride", formula=Chloride~100, parka, newdata=grd, model = m)
-coordinates(parka) <- ~x+y
+m2 <- Variogram(park_sp_gls, form= ~ Chloride + Utm_N + Utm_E)
 
-fit.wave(v.object, c0, cw, aw, type=􏰄c􏰄,
-iterations=10, tolerance=1e-06, echo=FALSE, plot.it=FALSE, weighted=TRUE)
+coordinates(parka) <- ~Utm_E+Utm_N
+coordinates(grd) <- ~Utm_E+Utm_N
+
+q1 <- krige(id="Chloride", formula=Chloride~1, data=parka, newdata=grd, model = m, locations=~'Utm_E'+'Utm_N')
+
+
+# Create 3D Scatterplot of predicted Chloride concentrations
+scatterplot3d(q1$Utm_E, q1$Utm_N, q1$Chloride.pred, xlab="x", ylab="y",
+  zlab="Predicted values")
+plot3d(q1$Utm_E, q1$Utm_N, q1$Chloride.pred, size=3)
+
+# Variogram with periodicity
+m3 <- fit.wave(m, type='c', iterations=10, tolerance=1e-06, echo=FALSE, plot.it=FALSE, weighted=TRUE)
 ```
 
