@@ -26,41 +26,42 @@ parkb <- as.geodata(parka)
 prediction <- ksline(parkb, cov.model="exp", cov.pars=c(10, 3.33),                        nugget=0, locations=c(332640,795600))
 prediction$predict
 
-# The spatial ranges for X and Y coordinate locations are determined
+# Produce a grid whose points will be estimated using kriging
 x.range <- as.integer(range(park[,1]))
 y.range <- as.integer(range(park[,2]))
 x=seq(from=x.range[1], to=x.range[2], by=100)
-head(x)
 y=seq(from=y.range[1], to=y.range[2], by=100)
 length(x)
 length(y)
 xv <- rep(x,length(y))
 yv <- rep(y, each=length(x))
-head(xv)
-head(yv)
 in_mat <- as.matrix(cbind(xv,yv))
-head(in_mat)
+plot(in_mat)
+
+# Predicts the value at each one of these points
 q <- ksline(parkb, cov.model="exp",cov.pars=c(10,3.33), nugget=0,
        locations=in_mat)
+
+# Construct the raster map
 image(q, val=q$predict)
-cbind(q$predict[1:5], q$krige.var[1:5])
 points(parka)
+
+# Access the predicted values and their variances
+cbind(q$predict[1:5], q$krige.var[1:5])
+
+# Construct a perspective plot of the predicted values
 zmatrix <- matrix(q$predict, 1274, 966)
 persp(x,y,zmatrix, xlab="x coordinate",
   ylab="y coordinate", zlab="Predicted values of z",
   main="Perspective plot of the predicted values")
-head(matrix(q$predict, 1274, 966))
+
+# Construct a perspective plot of the standard errors
 zmatrix2 <- matrix(q$krige.var, 1274, 966)
 persp(x,y,zmatrix2, xlab="x coordinate",
   ylab="ycoordinate", zlab="Predicted values of z",
   main="Perspective plot of the standard errors")
-#pushingchange
+
+
 ```
 
-You can also embed plots, for example:
 
-```{r, echo=FALSE}
-plot(cars)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
