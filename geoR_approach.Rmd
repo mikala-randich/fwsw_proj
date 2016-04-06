@@ -43,7 +43,7 @@ q <- ksline(parkb, cov.model="exp",cov.pars=c(10,3.33), nugget=0,
 image(q, val=q$predict)
 points(parka)
 
-# Access the predicted values and their variances
+# Access the predicted values and their variances (for first 5 values)
 cbind(q$predict[1:5], q$krige.var[1:5])
 
 # Construct a perspective plot of the predicted values
