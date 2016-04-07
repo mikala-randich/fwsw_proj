@@ -41,10 +41,10 @@ par(mfrow=c(1,1))
 plot(Variogram(park_gls, form= ~ Chloride + Utm_N + Utm_E))
 
 
-x = park_xy$x 
-y = park_xy$y
-abn_xy = data.frame(cl, park_xy)
-abn_xy
+# Variogram with periodicity
+m <- Variogram(park_gls, form= ~ Chloride + Utm_N + Utm_E)
+m3 <- fit.wave(m, type='c', iterations=10, tolerance=1e-06, echo=FALSE, plot.it=FALSE, weighted=TRUE)
+
 ```
 
 
