@@ -10,40 +10,96 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r}
-# First, the data file is imported, and the relevant columns of data are subsetted from the data file.
-park = ParkQuant
-colsofinterest = c('Utm_E', 'Utm_N', 'Chloride')
-parka <- subset(park, select = colsofinterest)
-
-# Load the necessary packages from R
 library(gstat)
 library(sgeostat)
 library(scatterplot3d)
 library(rgl)
+library(sp)
+library(nlme)
+# First, the data file is imported, and the relevant columns of data are subsetted from the data file.
+park = read.csv('./ParkQuant.csv')
+#colsofinterest = c('Utm_E', 'Utm_N', 'Chloride')
+park = SpatialPointsDataFrame(coords = park[ , c('Utm_E', 'Utm_N')],
+                              data=park)
+
+# Load the necessary packages from R
+
 
 # Create the grid for predictions of chloride based on spatial location
-x.range <- as.integer(range(parka[,1]))
-y.range <- as.integer(range(parka[,2]))
-grd <- expand.grid(x=seq(from=x.range[1], to=x.range[2], by=1),
-  y=seq(from=y.range[1], to=y.range[2], by=1))
+x.range <- as.integer(range(park@data$Utm_E))
+y.range <- as.integer(range(park@data$Utm_N))
+grd <- expand.grid(Utm_E=seq(from=x.range[1], to=x.range[2], by=100),
+                   Utm_N=seq(from=y.range[1], to=y.range[2], by=100))
 
 # Define models
 
-park_gls = gls(Chloride ~ 1, data = parka)
-plot(Variogram(park_gls, form= ~ Utm_E + Utm_N))
-maxDist = max(dist(parka[ , c('Utm_E', 'Utm_N')]))
-m <- Variogram(park_gls, form= ~ Chloride + Utm_N + Utm_E)
+park_gls = gls(Chloride ~ 1, data = park)
+park_sp = update(park_gls, correlation = corExp(form=~Utm_E + Utm_N))
+park_sp_nug = update(park_gls, correlation = corExp(form=~Utm_E + Utm_N,
+                                                    nugget=T))
 
-q1 <- krige(id="Chloride", formula=Chloride~1, data=parka, newdata=grd, model=m, locations=~Utm_E+Utm_N)
+maxDist = max(dist(park[ , c('Utm_E', 'Utm_N')])) / 2
 
-park_sp_gls = update(park_gls, correlation = corExp(form=~Utm_E + Utm_N, nugget=T))
+plot(Variogram(park_gls, form= ~ Utm_E + Utm_N, maxDist=maxDist))
+
+park_v = variogram(Chloride ~ 1, park)
+plot(park_v)
+park_v_mod = fit.variogram(park_v, vgm("Exp", range=31832))
+park_v_mod
+
+gridded(grd) = ~Utm_E + Utm_N
+
+#alpha	
+#direction in plane (x,y), in positive degrees clockwise from positive y (North): alpha=0 for direction North (increasing y), alpha=90 for direction East (increasing x); optional a vector of directions in (x,y)
+v = variogram(gpark, alpha=c(0, 25, 45, 65, 90))
+plot(v)
+
+gpark = gstat(id='Chloride', formula=Chloride ~ Utm_E + Utm_N, data=park)
+vpark_res = fit.variogram(variogram(gpark), vgm("Exp"))
+gpark = gstat(id='Chloride', formula=Chloride ~ Utm_E + Utm_N, data=park,
+              model=vpark_res)
+plot(variogram(gpark))
+vpark_res
+vpark = vgm(psill = 294462.1, vpark_res, range = 31832, nugget = 0)
+
+pr_ok <- krige(Chloride~1, park, model=vpark_res, newdata=grd)
+spplot(pr_ok)
+
+x.range <- as.integer(range(park@data$Utm_E))
+y.range <- as.integer(range(park@data$Utm_N))
+xvals = seq(from=x.range[1], to=x.range[2], by=100)
+yvals = seq(from=y.range[1], to=y.range[2], by=100)
+grd <- expand.grid(Utm_E=xvals, Utm_N=yvals)
+
+m3 <- fit.wave(vpark_res, 294462.1, 31832, type='c', iterations=10, tolerance=1e-06, echo=FALSE, plot.it=FALSE, weighted=TRUE)
+
+?fit.wave
+?vgm
+
+countour(xvals, yvals, park@data$Chloride
+
+predpark = predict(gpark, grd)
+spplot(predpark)
+
+plot(grd)
+library(scatterplot3d)
+scatterplot3d(pr_ok$x, pr_ok$y, pr_ok$Chloride.pred, main="Predicted values")
+
+library(lattice)
+levelplot(pr_ok$Chloride.pred~x+y,pr_ok, aspect ="iso", main="Ordinary kriging predictions")
+levelplot(pr_ok$Chloride.var~x+y,pr_ok, aspect ="iso", main="Ordinary kriging variances")
+levelplot(sqrt(pr_ok$Chloride.var)~x+y,pr_ok, aspect ="iso", main="Ordinary kriging standard errors")
+
+
+
 plot(Variogram(park_sp_gls, form= ~ Utm_E + Utm_N))
 m2 <- Variogram(park_sp_gls, form= ~ Chloride + Utm_N + Utm_E)
 
 coordinates(parka) <- ~Utm_E+Utm_N
 coordinates(grd)
 
-q2 <- krige(id="Chloride", formula=Chloride~1, parka, newdata=grd, model = m2)
+q2 <- krige(id="Chloride", formula=Chloride~1, park, newdata=grd, model = m2)
+
 
 # Create 3D Scatterplot of predicted Chloride concentrations
 scatterplot3d(q1$Utm_E, q1$Utm_N, q1$Chloride.pred, xlab="x", ylab="y",
@@ -51,7 +107,7 @@ scatterplot3d(q1$Utm_E, q1$Utm_N, q1$Chloride.pred, xlab="x", ylab="y",
 plot3d(q1$Utm_E, q1$Utm_N, q1$Chloride.pred, size=3)
 
 # Variogram with periodicity
-m3 <- fit.wave(m, type='c', iterations=10, tolerance=1e-06, echo=FALSE, plot.it=FALSE, weighted=TRUE)
+m3 <- fit.wave(vpark_res, type='c', iterations=10, tolerance=1e-06, echo=FALSE, plot.it=FALSE, weighted=TRUE)
 
 ```
 
