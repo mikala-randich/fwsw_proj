@@ -6,7 +6,7 @@ output: word_document
 ---
 
 ```{r}
-#Load necessary R packages. Note: gstat and sgeostat may interfere with each other and produce errors. If this is the case, only run one of these packages at a time for the necessary functions and restart R session between loading each respective package
+#Load necessary R packages. Note: gstat and sgeostat may interfere with each other and produce errors. If this is the case, only run one of these packages at a time for the necessary functions and restart R session between loading each separate package. It is recommended to load gstat package first and do not load sgeostat package yet
 library(gstat)
 #library(sgeostat)
 library(rgl)
@@ -30,14 +30,7 @@ grd <- expand.grid(Utm_E=seq(from=x.range[1], to=x.range[2], by=100),
 gridded(grd) = ~Utm_E + Utm_N
 
 
-#Create gls model, gls model with spatial component, and spatial model with nugget
-park_gls = gls(Chloride ~ 1, data = park2)
-park_sp = update(park_gls, correlation = corExp(form=~Utm_E + Utm_N))
-park_sp_nug = update(park_gls, correlation = corExp(form=~Utm_E + Utm_N,
-                                                    nugget=T))
-
-
-#Find the maximum distance that should be included in analysis
+#Find the maximum distance that should be examined in analysis
 park_xy = data.frame(x = park$Utm_E, y = park$Utm_N)
 xy_dist = dist(park_xy)
 max_dist = max(xy_dist) / 2
@@ -52,6 +45,12 @@ mant_cl = mantel(xy_dist, cl_dist)
 mant_cl
 plot(xy_dist, cl_dist)
 
+#Create gls model, gls model with spatial component, and spatial model with nugget
+park_gls = gls(Chloride ~ 1, data = park2)
+park_sp = update(park_gls, correlation = corExp(form=~Utm_E + Utm_N))
+park_sp_nug = update(park_gls, correlation = corExp(form=~Utm_E + Utm_N,
+                                                    nugget=T))
+
 
 #Display variogram of basic gls model, spatial gls model, and spatial gls model with nugget
 plot(Variogram(park_gls, form= ~ Utm_E + Utm_N, maxDist=64308.87))
@@ -59,7 +58,7 @@ plot(Variogram(park_sp, form= ~ Utm_E + Utm_N, maxDist=64308.87))
 plot(Variogram(park_sp_nug, form= ~ Utm_E + Utm_N, maxDist=64308.87))
 
 
-#Make variogram with periodicity
+#Make variogram with periodicity. Note: In order to run this section, it is necessary to restart R session and load sgeostat package, but do not load gstat package
 parkpoint = point(data.frame(x=coordinates(park2)[,1], y = coordinates(park2)[,2]))
 parkpair = pair(parkpoint, num.lags=10, type='isotropic', theta=0, dtheta=5, maxdist = 64308.87)
 est_var = est.variogram(parkpoint,parkpair,'Chloride')
