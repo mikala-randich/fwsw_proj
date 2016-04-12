@@ -1,0 +1,105 @@
+---
+title: "fwsw_geostat"
+author: "Mikala"
+date: "March 23, 2016"
+output: word_document
+---
+
+```{r}
+#Load necessary R packages. Note: gstat and sgeostat may interfere with each other and produce errors. If this is the case, only run one of these packages at a time for the necessary functions and restart R session between loading each separate package. It is recommended to load gstat package first and do not load sgeostat package yet
+library(gstat)
+library(sgeostat)
+library(rgl)
+library(sp)
+library(nlme)
+library(ggplot2)
+library(vegan)
+
+
+# The data file is imported, and the relevant columns of data are subsetted from the data file and converted into a spatial points data frame
+park = read.csv('./ParkQuant.csv')
+park2 = SpatialPointsDataFrame(coords = park[ , c('Utm_E', 'Utm_N')],
+                              data=park)
+
+
+# Create the grid for predictions of chloride based on spatial location
+x.range <- as.integer(range(park2@data$Utm_E))
+y.range <- as.integer(range(park2@data$Utm_N))
+grd <- expand.grid(Utm_E=seq(from=x.range[1], to=x.range[2], by=100),
+                   Utm_N=seq(from=y.range[1], to=y.range[2], by=100))
+gridded(grd) = ~Utm_E + Utm_N
+
+
+#Find the maximum distance that should be examined in analysis
+park_xy = data.frame(x = park$Utm_E, y = park$Utm_N)
+xy_dist = dist(park_xy)
+max_dist = max(xy_dist) / 2
+max_dist
+
+# The chloride ion data is subsetted from the data file, and the distance function is again run on just the chloride concentrations. 
+cl = park$Chloride
+cl_dist = dist(cl)
+
+# A mantel test is run on the chloride and location distance functions to make an early examination of spatial dependnece, and locations are plotted against chloride concentrations.
+mant_cl = mantel(xy_dist, cl_dist)
+mant_cl
+plot(xy_dist, cl_dist)
+#The mantel test indicates there may be some positive spatial correlation, however it is not statistically significant. We will continue by using spatial models, variagrams, and visual displays to examine the data
+
+#Create gls model, gls model with spatial component, and spatial model with nugget
+park_gls = gls(Chloride ~ 1, data = park2)
+park_sp = update(park_gls, correlation = corExp(form=~Utm_E + Utm_N))
+park_sp_nug = update(park_gls, correlation = corExp(form=~Utm_E + Utm_N,
+                                                    nugget=T))
+
+#Display variogram of basic gls model, spatial gls model, and spatial gls model with nugget
+plot(Variogram(park_gls, form= ~ Utm_E + Utm_N, maxDist=max_dist))
+plot(Variogram(park_sp, form= ~ Utm_E + Utm_N, maxDist=max_dist))
+plot(Variogram(park_sp_nug, form= ~ Utm_E + Utm_N, maxDist=64308.87))
+
+#Compare models with/without spatial component and nugget
+anova(park_gls, park_sp, park_sp_nug)
+
+#Make variogram with periodicity. Note: In order to run this section, it is necessary to restart R session and load sgeostat package, but do not load gstat package
+parkpoint = point(data.frame(x=coordinates(park2)[,1], y = coordinates(park2)[,2]))
+parkpair = pair(parkpoint, num.lags=10, type='isotropic', theta=0, dtheta=5, maxdist = 64308.87)
+est_var = est.variogram(parkpoint,parkpair,'Chloride')
+m3 = fit.wave(est_var, 0, 294462.1, 31832, type='c', iterations=30, tolerance=1e-06, echo=FALSE, plot.it=FALSE, weighted=TRUE)
+
+?fit.wave
+
+#Because the basic gls model for the data had the highest AIC value when compared to the other models using anova, and the gls variogram smooths across the data slightly better, we will continue further analysis without the inclusion of a nugget and will create a gstat object
+
+
+#Create gstat object for Park data, and fit/view variogram for the gstat object
+gpark = gstat(id='Chloride', formula=Chloride ~ Utm_E + Utm_N, data=park2)
+vpark_res = fit.variogram(variogram(gpark), vgm("Exp"))
+gpark = gstat(id='Chloride', formula=Chloride ~ Utm_E + Utm_N, data=park2,
+              model=vpark_res)
+plot(variogram(gpark))
+
+
+#Use kriging function to make grid of predicted values for chloride, plot the predicted values grid and grid displaying the variances
+pr_ok <- krige(Chloride~1, park2, model=vpark_res, newdata=grd)
+spplot(pr_ok)
+
+
+#Create visual density map of Chloride concentrations
+x.range <- as.integer(range(park2@data$Utm_E))
+y.range <- as.integer(range(park2@data$Utm_N))
+xvals = seq(from=x.range[1], to=x.range[2], by=100)
+yvals = seq(from=y.range[1], to=y.range[2], by=100)
+grd <- expand.grid(Utm_E=xvals, Utm_N=yvals)
+densityMap <- function(dat, var){
+  varChart <- ggplot(data = dat, aes(x=Utm_E, y=Utm_N, z=var)) + 
+    geom_point(aes(color = var)) +
+    scale_color_gradient(low="yellow",high="red")+
+    stat_density2d(geom = "polygon", n=30, aes(fill=..level..))+
+    geom_point(aes(color = var))
+  return(varChart)
+}
+densityMap(park, park2@data$Chloride)
+
+
+```
+
