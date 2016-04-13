@@ -7,8 +7,8 @@ output: word_document
 
 ```{r}
 #Load necessary R packages. Note: gstat and sgeostat may interfere with each other and produce errors. If this is the case, only run one of these packages at a time for the necessary functions and restart R session between loading each separate package. It is recommended to load gstat package first and do not load sgeostat package yet
-#library(gstat)
-library(sgeostat)
+library(gstat)
+#library(sgeostat)
 library(rgl)
 library(sp)
 library(nlme)
@@ -44,7 +44,7 @@ cl_dist = dist(cl)
 mant_cl = mantel(xy_dist, cl_dist)
 mant_cl
 plot(xy_dist, cl_dist)
-?plot
+
 #The mantel test indicates there may be some positive spatial correlation, however it is not statistically significant. We will continue by using spatial models, variagrams, and visual displays to examine the data
 
 #Create gls model, gls model with spatial component, and spatial model with nugget
@@ -69,8 +69,8 @@ est_var = est.variogram(parkpoint, parkpair, "Chloride")
 est_var
 m3 = fit.wave(est_var, 0, 294462.1, 31832, type='c', iterations=100,
               tolerance=1e-06, echo=FALSE, plot.it=T, weighted=T)
+#the periodic variogram was not significantly better than the other variograms created
 
-?fit.wave
 
 #Because the basic gls model for the data had the highest AIC value when compared to the other models using anova, and the gls variogram smooths across the data slightly better, we will continue further analysis without the inclusion of a nugget and will create a gstat object
 
