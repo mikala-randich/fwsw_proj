@@ -8,3 +8,5 @@ SCDNR and the College of Charleston are working in conjunction to re-examine the
 To recreate these results, import the data file 'ParkQuant' from the project repository. There are different R markdown files corresponding to different approaches to analyze the data, which can be pulled from the repository and re-run by other persons. 
 
 Data from: Park, A. D. (1985). The ground-water resources of Charleston, Berkeley, and Dorchester Counties, South Carolina. Report/South Carolina Water Resources Commission (USA).
+
+Thanks to Mitch Oshima, creator of the function that creates the density map of Chloride concentrations. 
