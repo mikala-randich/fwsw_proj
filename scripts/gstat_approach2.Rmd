@@ -92,7 +92,7 @@ pr_ok <- krige(Chloride~1, park2, model=vpark_res, newdata=grd)
 spplot(pr_ok, main = "Kriging Grid of Predicted Chloride Values and Variance")
 
 
-#Create visual density map of Chloride concentrations
+#Create visual density map of Chloride concentrations - function code written by Mitch Oshima (College of Charleston)
 x.range <- as.integer(range(park2@data$Utm_E))
 y.range <- as.integer(range(park2@data$Utm_N))
 xvals = seq(from=x.range[1], to=x.range[2], by=100)

@@ -1,5 +1,3 @@
-#Function for creating density map. Function code written by Mitch Oshima (College of Charleston)
-
 densityMap <- function(dat, var){
   varChart <- ggplot(data = dat, aes(x=Utm_E, y=Utm_N, z=var)) + 
     geom_point(aes(color = var)) +
