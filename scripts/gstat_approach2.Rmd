@@ -43,7 +43,7 @@ cl_dist = dist(cl)
 # A mantel test is run on the chloride and location distance functions to make an early examination of spatial dependnece, and locations are plotted against chloride concentrations.
 mant_cl = mantel(xy_dist, cl_dist)
 mant_cl
-plot(xy_dist, cl_dist)
+plot(xy_dist, cl_dist, main = "Spatial Distance vs Distance Between Chloride Values")
 abline(lm(cl_dist ~ xy_dist), lwd=3, col='red')
 lines(lowess(xy_dist, cl_dist), lwd=3, col='pink')
 abline(v = max_dist, col='red', lwd=3, lty=2)
@@ -71,13 +71,11 @@ anova(park_gls, park_sp, park_sp_nug)
 parkpoint = point(park, x='Utm_E', y='Utm_N')
 parkpair = pair(parkpoint, num.lags=10, type='isotropic', theta=0, dtheta=5, maxdist = 31832)
 est_var = est.variogram(parkpoint, parkpair, "Chloride")
-?est.variogram
-est_var
 m3 = fit.wave(est_var, 0, 294462.1, 31832, type='c', iterations=100,
               tolerance=1e-06, echo=FALSE, plot.it=T, weighted=T)
 #the periodic variogram was not significantly better than the other variograms created
 
-#Because the basic gls model for the data had the highest AIC value when compared to the other models using anova, and the gls variogram smooths the data slightly better, we will continue further analysis without the inclusion of a nugget and will create a gstat object
+#Because the basic gls model variogram appeard to have the best fit, we will continue further analysis without the inclusion of a nugget and will create a gstat object
 
 #Create gstat object for Park data, and fit/view variogram for the gstat object
 gpark = gstat(id='Chloride', formula=Chloride ~ Utm_E + Utm_N, data=park2)
